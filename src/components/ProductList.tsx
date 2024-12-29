@@ -1,12 +1,15 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
+import { fetchTotalItems, fetchProducts } from "@/services/api";
 
 type Product = {
   id: string;
   name: string;
   price: number;
   image: string;
+  brand: string;
+  model: string;
 };
 
 const ProductList: React.FC = () => {
@@ -16,26 +19,39 @@ const ProductList: React.FC = () => {
   const [totalItems, setTotalItems] = useState<number>(0);
   const itemsPerPage = 12;
 
-  // Calcılate total items, api doesn't provide total pages
-  const fetchTotalItems = async () => {
+  const [brands, setBrands] = useState<string[]>([]);
+  const [models, setModels] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string>("");
+
+  const loadTotalItems = async () => {
     try {
-      const response = await fetch(
-        `https://5fc9346b2af77700165ae514.mockapi.io/products`
+      const data: Product[] = await fetchTotalItems();
+      const uniqueBrands = Array.from(
+        new Set(data.map((item: Product) => item.brand))
       );
-      const data = await response.json();
+      const uniqueModels = Array.from(
+        new Set(data.map((item: Product) => item.model))
+      );
+      setBrands(uniqueBrands);
+      setModels(uniqueModels);
       setTotalItems(data.length);
     } catch (error) {
       console.error("Failed to fetch total items:", error);
     }
   };
 
-  const fetchProducts = async () => {
+  const loadProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://5fc9346b2af77700165ae514.mockapi.io/products?page=${page}&limit=${itemsPerPage}`
+      const data = await fetchProducts(
+        page,
+        itemsPerPage,
+        selectedBrands,
+        selectedModels,
+        sortBy
       );
-      const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error("Failed to fetch products:", error);
@@ -45,13 +61,12 @@ const ProductList: React.FC = () => {
   };
 
   useEffect(() => {
-    // Get all items to calculate total items in first render
-    fetchTotalItems();
+    loadTotalItems();
   }, []);
 
   useEffect(() => {
-    fetchProducts();
-  }, [page]);
+    loadProducts();
+  }, [page, selectedBrands, selectedModels, sortBy]);
 
   const handleNextPage = () => {
     if (page < Math.ceil(totalItems / itemsPerPage)) {
@@ -70,46 +85,111 @@ const ProductList: React.FC = () => {
   }
 
   return (
-    <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            id={product.id}
-            name={product.name}
-            price={product.price}
-            image={product.image}
-            onAddToCart={() => {}}
-          />
-        ))}
+    <div className="flex">
+      {/* Sidebar Filters */}
+      <div className="w-1/4 p-4 text-gray-800">
+        <h3 className="font-bold mb-4">Sort By</h3>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="border rounded p-2 w-full mb-6"
+        >
+          <option value="">Select</option>
+          <option value="price_low_to_high">Price: Low to High</option>
+          <option value="price_high_to_low">Price: High to Low</option>
+        </select>
+        <h3 className="font-bold mb-4">Brands</h3>
+        <div className="max-h-40 overflow-y-scroll border rounded p-2">
+          {brands.map((brand) => (
+            <div key={brand} className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                id={brand}
+                value={brand}
+                checked={selectedBrands.includes(brand)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedBrands((prev) =>
+                    prev.includes(value)
+                      ? prev.filter((item) => item !== value)
+                      : [...prev, value]
+                  );
+                }}
+                className="mr-2"
+              />
+              <label htmlFor={brand}>{brand}</label>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="font-bold mt-6 mb-4">Models</h3>
+        <div className="max-h-40 overflow-y-scroll border rounded p-2">
+          {models.map((model) => (
+            <div key={model} className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                id={model}
+                value={model}
+                checked={selectedModels.includes(model)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedModels((prev) =>
+                    prev.includes(value)
+                      ? prev.filter((item) => item !== value)
+                      : [...prev, value]
+                  );
+                }}
+                className="mr-2"
+              />
+              <label htmlFor={model}>{model}</label>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="flex justify-center items-center mt-6 gap-4">
-        <button
-          onClick={handlePrevPage}
-          disabled={page === 1}
-          className={`px-4 py-2 rounded ${
-            page === 1
-              ? "bg-gray-300 text-gray-600"
-              : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
-        >
-          Previous
-        </button>
-        <span className="text-gray-800">
-          Page {page} of {Math.ceil(totalItems / itemsPerPage)}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={page === Math.ceil(totalItems / itemsPerPage)}
-          className={`px-4 py-2 rounded ${
-            page === Math.ceil(totalItems / itemsPerPage)
-              ? "bg-gray-300 text-gray-600"
-              : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
-        >
-          Next
-        </button>
+      {/* Product List */}
+      <div className="w-3/4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              price={product.price}
+              image={product.image}
+              onAddToCart={() => {}}
+            />
+          ))}
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-center items-center mt-6 gap-4">
+          <button
+            onClick={handlePrevPage}
+            disabled={page === 1}
+            className={`px-4 py-2 rounded ${
+              page === 1
+                ? "bg-gray-300 text-gray-600"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            }`}
+          >
+            Previous
+          </button>
+          <span className="text-gray-800">
+            Page {page} of {Math.ceil(totalItems / itemsPerPage)}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={page === Math.ceil(totalItems / itemsPerPage)}
+            className={`px-4 py-2 rounded ${
+              page === Math.ceil(totalItems / itemsPerPage)
+                ? "bg-gray-300 text-gray-600"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            }`}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,13 +1,35 @@
 import axios from "axios";
 
-const API_URL = "https://5fc9346b2af77700165ae514.mockapi.io/products";
+const API_BASE_URL = "https://5fc9346b2af77700165ae514.mockapi.io";
 
-export const fetchProducts = async () => {
-  const response = await axios.get(API_URL);
+export const fetchTotalItems = async () => {
+  const response = await axios.get(`${API_BASE_URL}/products`);
   return response.data;
 };
 
-export const fetchProductById = async (id: string) => {
-  const response = await axios.get(`${API_URL}/${id}`);
+export const fetchProducts = async (
+  page: number,
+  itemsPerPage: number,
+  selectedBrands: string[],
+  selectedModels: string[],
+  sortBy: string
+) => {
+  let apiUrl = `${API_BASE_URL}/products?page=${page}&limit=${itemsPerPage}`;
+
+  if (selectedBrands.length > 0) {
+    apiUrl += `&brand=${selectedBrands.join(",")}`;
+  }
+
+  if (selectedModels.length > 0) {
+    apiUrl += `&model=${selectedModels.join(",")}`;
+  }
+
+  if (sortBy === "price_low_to_high") {
+    apiUrl += `&sortBy=price&order=asc`;
+  } else if (sortBy === "price_high_to_low") {
+    apiUrl += `&sortBy=price&order=desc`;
+  }
+
+  const response = await axios.get(apiUrl);
   return response.data;
 };
