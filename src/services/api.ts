@@ -33,3 +33,14 @@ export const fetchProducts = async (
   const response = await axios.get(apiUrl);
   return response.data;
 };
+
+export const fetchProductById = async (id: string) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/products/${id}`);
+    console.log("response", response);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch product by ID:", error);
+    return null;
+  }
+};
