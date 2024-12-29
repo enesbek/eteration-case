@@ -2,15 +2,8 @@
 import React, { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import { fetchTotalItems, fetchProducts } from "@/services/api";
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  brand: string;
-  model: string;
-};
+import { Product } from "@/types/Product";
+import { useCart } from "@/context/CartContext";
 
 const ProductList: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -24,6 +17,7 @@ const ProductList: React.FC = () => {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("");
+  const { addToCart } = useCart();
 
   const loadTotalItems = async () => {
     try {
@@ -157,7 +151,7 @@ const ProductList: React.FC = () => {
               name={product.name}
               price={product.price}
               image={product.image}
-              onAddToCart={() => {}}
+              onAddToCart={() => addToCart(product)}
             />
           ))}
         </div>
