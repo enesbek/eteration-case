@@ -12,7 +12,8 @@ export const fetchProducts = async (
   itemsPerPage: number,
   selectedBrands: string[],
   selectedModels: string[],
-  sortBy: string
+  sortBy: string,
+  searchQuery: string
 ) => {
   let apiUrl = `${API_BASE_URL}/products?page=${page}&limit=${itemsPerPage}`;
 
@@ -28,6 +29,10 @@ export const fetchProducts = async (
     apiUrl += `&sortBy=price&order=asc`;
   } else if (sortBy === "price_high_to_low") {
     apiUrl += `&sortBy=price&order=desc`;
+  }
+
+  if (searchQuery) {
+    apiUrl += `&name=${searchQuery}`;
   }
 
   const response = await axios.get(apiUrl);

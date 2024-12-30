@@ -11,7 +11,7 @@ const Cart: React.FC = () => {
     .toFixed(2);
 
   return (
-    <div className="container mx-auto p-6 text-gray-800">
+    <div className="container mx-auto p-6 px-2 text-gray-800">
       {cart.length === 0 ? (
         <p>Your cart is empty.</p>
       ) : (

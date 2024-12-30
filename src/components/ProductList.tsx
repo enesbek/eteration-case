@@ -4,12 +4,14 @@ import ProductCard from "@/components/ProductCard";
 import { fetchTotalItems, fetchProducts } from "@/services/api";
 import { Product } from "@/types/Product";
 import { useCart } from "@/context/CartContext";
+import { useSearch } from "@/context/SearchContext";
 
 const ProductList: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [totalItems, setTotalItems] = useState<number>(0);
+  const [filtersOpen, setFiltersOpen] = useState<boolean>(false);
   const itemsPerPage = 12;
 
   const [brands, setBrands] = useState<string[]>([]);
@@ -18,6 +20,7 @@ const ProductList: React.FC = () => {
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("");
   const { addToCart } = useCart();
+  const { searchQuery } = useSearch();
 
   const loadTotalItems = async () => {
     try {
@@ -44,7 +47,8 @@ const ProductList: React.FC = () => {
         itemsPerPage,
         selectedBrands,
         selectedModels,
-        sortBy
+        sortBy,
+        searchQuery
       );
       setProducts(data);
     } catch (error) {
@@ -60,7 +64,7 @@ const ProductList: React.FC = () => {
 
   useEffect(() => {
     loadProducts();
-  }, [page, selectedBrands, selectedModels, sortBy]);
+  }, [page, selectedBrands, selectedModels, sortBy, searchQuery]);
 
   const handleNextPage = () => {
     if (page < Math.ceil(totalItems / itemsPerPage)) {
@@ -79,9 +83,12 @@ const ProductList: React.FC = () => {
   }
 
   return (
-    <div className="flex">
-      {/* Sidebar Filters */}
-      <div className="w-1/4 p-4 text-gray-800">
+    <div className="flex flex-col md:flex-row">
+      <div
+        className={`w-full md:w-1/4 p-4 text-gray-800 ${
+          filtersOpen ? "" : "hidden md:block"
+        }`}
+      >
         <h3 className="font-bold mb-4">Sort By</h3>
         <select
           value={sortBy}
@@ -141,9 +148,17 @@ const ProductList: React.FC = () => {
         </div>
       </div>
 
-      {/* Product List */}
-      <div className="w-3/4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="w-full md:w-3/4">
+        <div className="block md:hidden p-4">
+          <button
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
+            {filtersOpen ? "Close Filters" : "Filters"}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
             <ProductCard
               key={product.id}
@@ -156,7 +171,6 @@ const ProductList: React.FC = () => {
           ))}
         </div>
 
-        {/* Pagination */}
         <div className="flex justify-center items-center mt-6 gap-4">
           <button
             onClick={handlePrevPage}
